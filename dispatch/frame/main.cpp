@@ -7,16 +7,8 @@
 #include "core_mutex.h"
 
 using namespace std;
-SpinLock sl;
-void foo(void *d){
-    do {
-        sl.lock();
-        uint64 i = *(uint64*)d;
-        fprintf(stdout, "%lu hello %lu\n", i, pthread_self());
-        sl.unlock();
 
-    }while(1);
-}
+TimerManager m;
 
 class TT: public Timer
 {
@@ -25,23 +17,29 @@ public:
         set_loop(true);
     }
     virtual void on_timer() {
-        printf("timer id = %lu, now = %lu\n", get_timer_id(), TimeUtil::get_millisecond());
+        uint64 t = TimeUtil::get_millisecond();
+        printf("timer id = %lu, expire = %lu, now = %lu, rest= %ld\n",
+               get_timer_id(), expire_, t, t-ex);
     }
 };
-
+TT t;
+void foo(void *d){
+    sleep(1);
+    do {
+        m.add_timer(&t, 2000, true);
+    }while(0);
+}
 
 int main()
 {
     printf("pid = %lu, __cplusplus = %ld\n", pthread_self(), __cplusplus);
-    uint64 last = TimeUtil::get_millisecond();
-    TimerManager m;
-    TT t;
-    m.add_timer(&t, 500000, true);
+
+    Thread th(std::bind(foo, nullptr), "");
+    th.start();
+    //m.add_timer(&t, 2000, true);
+
     while (1) {
-        if (TimeUtil::get_millisecond() - last >= 10) {
-            m.expire_timer();
-            last = TimeUtil::get_millisecond();
-        }
+        m.expire_timer();
     }
 
     printf("%d\n", 0);

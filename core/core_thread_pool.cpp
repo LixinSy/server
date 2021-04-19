@@ -66,7 +66,7 @@ int32 ThreadPool::add_task(FuncT func, void *arg) {
         mtx_.unlock();
         return -1;
     }
-    if (task_queue_.last_){
+    if (task_queue_.last_) {
         task_queue_.last_->next_ = new_task;
         task_queue_.last_ = new_task;
     } else {

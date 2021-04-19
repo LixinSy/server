@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "def.h"
+#include "core_mutex.h"
 
 
 class TimerManager;
@@ -11,18 +12,20 @@ class Timer
 {
     friend TimerManager;
 public:
-    Timer():id_(0), expire_(0), interval_(0), loop_(false){};
+    Timer():id_(0), expire_(0), interval_(0), loop_(false), cancel_(false){};
     virtual ~Timer(){}
     uint64 get_timer_id(){  return id_; }
     bool is_loop(){ return loop_; }
+    bool is_cancel() {return cancel_; }
     void set_loop(bool loop) {loop_ = loop; }
 protected:
     virtual void on_timer() = 0;
-private:
+//private:
     uint64      id_;
-    uint64      expire_;
+    uint64      expire_,ex;
     uint32      interval_;
-    bool        loop_;
+    bool        loop_:4;
+    bool        cancel_:4;
 };
 
 struct TimerNode
@@ -47,7 +50,10 @@ public:
     void del_timer(Timer *timer);
     void expire_timer();
 private:
-    uint32          next_timer_id_;
+    void _tick(uint64 tk);
+    SpinLock        spin_;
+    uint64          last_tick_;
+    uint64          next_timer_id_;
     uint32         *slot_;
     TimeWheel      *tw_;
 };
