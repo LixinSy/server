@@ -1,11 +1,10 @@
 #include "core_timer.h"
-#include "comm_time_util.h"
 #include <stdio.h>
+#include "comm_time_util.h"
 
 
 static const uint32 SI = 10;//ms
 static const uint32 TIME_WHEEL_LEVEL = 4;
-//static const uint32 LEVEL_RADIX[TIME_WHEEL_LEVEL] = /*{4, 3, 3, 3};//*/{10, 8, 6, 6};
 static const uint32 LEVEL_DIVIS[TIME_WHEEL_LEVEL] = /*{0, 4, 7, 10};//*/{0, 10, 18, 24};
 static const uint32 LEVEL_SLOTS[TIME_WHEEL_LEVEL] = /*{16, 8, 8, 8};//*/{1024, 256, 64, 64};
 static const uint32 LEVEL_MASKS[TIME_WHEEL_LEVEL] = /*{15, 7, 7, 7};//*/{1023, 255, 63, 63};
@@ -17,12 +16,42 @@ inline static int64_t get_tick() {
     return tv.tv_sec * 100ULL + tv.tv_usec / 10000ULL;
 }
 
+
+Timer::Timer()
+    : id_(0),
+      expire_(0),
+      interval_(0),
+      loop_(false),
+      cancel_(false)
+{
+}
+
+Timer::~Timer() {
+
+}
+
 void Timer::start_timer(uint32 millisecond, bool loop) {
     TimerManager::instance()->add_timer(shared_from_this(), millisecond, loop);
 }
+
 void Timer::stop_timer() {
     cancel_ = false;
 }
+
+
+TimerTask::TimerTask(TimerFunc func)
+    : func_(std::move(func))
+{
+}
+
+TimerTask::~TimerTask() {
+
+}
+
+void TimerTask::on_timer() {
+    func_();
+}
+
 
 TimerManager::TimerManager() {
     next_timer_id_ = 1;
@@ -51,7 +80,7 @@ std::string vec_as_string(uint32 *v, uint32 n) {
     return os.str();
 }
 
-inline TimerManager *TimerManager::instance() {
+TimerManager *TimerManager::instance() {
     static TimerManager obj;
     return &obj;
 }
@@ -75,8 +104,8 @@ bool TimerManager::add_timer(TimerSPtr timer, uint32 millisecond, bool loop) {
     timer->interval_ = millisecond;
     timer->loop_ = loop;
     TimerNode *new_node = new TimerNode;
-    new_node->next_ = nullptr;
-    new_node->timer_ = timer;
+    new_node->next = nullptr;
+    new_node->timer = timer;
     uint32 level, slot=0;
     uint32 tick = millisecond / SI;
     uint32 tmp = tick;
@@ -95,12 +124,12 @@ bool TimerManager::add_timer(TimerSPtr timer, uint32 millisecond, bool loop) {
     printf("------------new timer [%u, %u], tick=%u, cur=%s\n", level, slot, tmp, vec_as_string(slot_, 4).c_str());
     bool succeed = spin_.try_lock();
     TimerQueue &queue = tw_[level][slot];
-    if (queue.last_){
-        queue.last_->next_ = new_node;
-        queue.last_ = new_node;
+    if (queue.last){
+        queue.last->next = new_node;
+        queue.last = new_node;
     } else {
-        queue.last_ = new_node;
-        queue.first_ = queue.last_;
+        queue.last = new_node;
+        queue.first = queue.last;
     }
     if (succeed) {
         spin_.unlock();
@@ -127,13 +156,13 @@ void TimerManager::_tick(uint64 tk) {
         //move timer
         spin_.lock();
         TimerQueue &cur_queue = tw_[i][slot_[i]];
-        for (node = cur_queue.first_; node; node = cur_queue.first_) {
-            cur_queue.first_ = cur_queue.first_->next_;
-            if (cur_queue.first_ == nullptr) {
-                cur_queue.last_ = cur_queue.first_;
+        for (node = cur_queue.first; node; node = cur_queue.first) {
+            cur_queue.first = cur_queue.first->next;
+            if (cur_queue.first == nullptr) {
+                cur_queue.last = cur_queue.first;
             }
-            node->next_ = nullptr;
-            timer = node->timer_.lock();
+            node->next = nullptr;
+            timer = node->timer.lock();
             if (!timer) {
                 delete node;
                 continue;
@@ -162,25 +191,25 @@ void TimerManager::_tick(uint64 tk) {
             //if (&target_queue == &cur_queue) {
             //    printf("circle!!!!!!!!!!!!!!!!!!!!!!!\n");
             //}
-            if (target_queue.last_){
-                target_queue.last_->next_ = node;
-                target_queue.last_ = node;
+            if (target_queue.last){
+                target_queue.last->next = node;
+                target_queue.last = node;
             } else {
-                target_queue.last_ = node;
-                target_queue.first_ = target_queue.last_;
+                target_queue.last = node;
+                target_queue.first = target_queue.last;
             }
         }
         spin_.unlock();
     }
     spin_.lock();
     TimerQueue &queue = tw_[0][slot_[0]];
-    for (node = queue.first_; node; node = queue.first_) {
-        queue.first_ = queue.first_->next_;
-        if (queue.first_ == nullptr) {
-            queue.last_ = queue.first_;
+    for (node = queue.first; node; node = queue.first) {
+        queue.first = queue.first->next;
+        if (queue.first == nullptr) {
+            queue.last = queue.first;
         }
-        node->next_ = nullptr;
-        timer = node->timer_.lock();
+        node->next = nullptr;
+        timer = node->timer.lock();
         if (!timer || timer->cancel_) {
             delete node;
             continue;

@@ -7,11 +7,12 @@ static void *start_thread_func(void *arg) {
 }
 
 Runable::Runable()
-    :tid_(0)
+    : tid_(0)
 {
 }
+
 Runable::~Runable() {
-    //pthread_detach(tid_);
+
 }
 
 bool Runable::start() {
@@ -27,12 +28,15 @@ bool Runable::start() {
 }
 
 Thread::Thread(ThreadFunc func, const std::string& name)
-    :func_(std::move(func)), name_(name)
+    : func_(std::move(func)),
+      name_(name)
 {
 }
+
 Thread::~Thread() {
 
 }
+
 void Thread::run() {
     func_();
 }

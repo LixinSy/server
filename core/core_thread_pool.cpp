@@ -16,16 +16,16 @@ void *thread_pool_cycle(void *data){
     fprintf(stderr, "tid = %lu\n", pthread_self());
     while (1) {
         tp->mtx_.lock();
-        tp->cond_.wait(tp->mtx_, [tp]{return tp->task_queue_.first_;});
-        task = tp->task_queue_.first_;
-        tp->task_queue_.first_ = tp->task_queue_.first_->next_;
-        if (tp->task_queue_.first_ == nullptr) {
-            tp->task_queue_.last_ = nullptr;
+        tp->cond_.wait(tp->mtx_, [tp]{return tp->task_queue_.first;});
+        task = tp->task_queue_.first;
+        tp->task_queue_.first = tp->task_queue_.first->next;
+        if (tp->task_queue_.first == nullptr) {
+            tp->task_queue_.last = nullptr;
         }
         tp->waiting_--;
         tp->mtx_.unlock();
-        task->next_ = nullptr;
-        task->func_(task->data_);
+        task->next = nullptr;
+        task->func(task->data);
         delete task;
         task = nullptr;
     }
@@ -59,20 +59,21 @@ ThreadPool::~ThreadPool() {
 
 int32 ThreadPool::add_task(FuncT func, void *arg) {
     ThreadPoolTask *new_task = new ThreadPoolTask;
-    new_task->func_ = func;
-    new_task->data_ = arg;
-    new_task->next_ = nullptr;
+    new_task->func = func;
+    new_task->data = arg;
+    new_task->next = nullptr;
     mtx_.lock();
     if (waiting_ >= max_task_) {
         mtx_.unlock();
+        delete new_task;
         return -1;
     }
-    if (task_queue_.last_) {
-        task_queue_.last_->next_ = new_task;
-        task_queue_.last_ = new_task;
+    if (task_queue_.last) {
+        task_queue_.last->next = new_task;
+        task_queue_.last = new_task;
     } else {
-        task_queue_.last_ = new_task;
-        task_queue_.first_ = task_queue_.last_;
+        task_queue_.last = new_task;
+        task_queue_.first = task_queue_.last;
     }
     waiting_++;
     cond_.notify_one();

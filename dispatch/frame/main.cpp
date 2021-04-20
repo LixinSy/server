@@ -38,7 +38,9 @@ int main()
     //th.start();
 //    {
     TimerSPtr sp(new TT);
-    sp->start_timer(2000, true);
+    //sp->start_timer(2000, true);
+    TimerSPtr sp1(new TimerTask(std::bind(&TT::on_timer, t)));
+    sp1->start_timer(1000, true);
 //    }
     while (1) {
         TimerManager::instance()->expire_timer();

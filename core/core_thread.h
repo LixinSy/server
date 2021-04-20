@@ -10,11 +10,12 @@ class Runable
 public:
     Runable();
     virtual ~Runable();
-    virtual void run()=0;
-    bool start();
     // non-copyable
     Runable(const Runable &) = delete;
     Runable & operator=(const Runable &) = delete;
+
+    virtual void run()=0;
+    bool start();
 protected:
     pthread_t       tid_;
 };
@@ -25,11 +26,13 @@ public:
     using ThreadFunc = std::function<void()>;
     explicit Thread(ThreadFunc func, const std::string& name);
     ~Thread();
-    virtual void run();
-    const std::string& get_name() const { return name_; }
     // non-copyable
     Thread(const Thread &) = delete;
     Thread & operator=(const Thread &) = delete;
+
+    virtual void run();
+    const std::string& get_name() const { return name_; }
+
 private:
     ThreadFunc      func_;
     std::string     name_;

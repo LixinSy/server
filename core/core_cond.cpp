@@ -23,7 +23,6 @@ void Condition::wait(Mutex &mtx) {
     pthread_cond_wait(&cond_, mtx.get_mutex());
 }
 
-//template<typename _Predicate>
 void Condition::wait(Mutex &mtx, std::function<bool()> pred) {
     while (!pred())
         wait(mtx);

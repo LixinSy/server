@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <memory>
+#include <functional>
 #include "def.h"
 #include "core_mutex.h"
 #include "core_singleton.h"
@@ -14,18 +15,19 @@ class Timer;
 using TimerSPtr = std::shared_ptr<Timer>;
 using TimerWPtr = std::weak_ptr<Timer>;
 
+
 class Timer: public std::enable_shared_from_this<Timer>
 {
     friend TimerManager;
 public:
-    Timer():id_(0), expire_(0), interval_(0), loop_(false), cancel_(false){};
-    virtual ~Timer(){}
+    Timer();
+    virtual ~Timer();
     void start_timer(uint32 millisecond, bool loop);
     void stop_timer();
-    uint64 get_timer_id(){  return id_; }
-    bool is_loop(){ return loop_; }
-    bool is_cancel() {return cancel_; }
-    void set_loop(bool loop) {loop_ = loop; }
+    uint64 get_timer_id() const;
+    bool is_loop() const;
+    bool is_cancel() const;
+    void set_loop(bool loop);
 protected:
     virtual void on_timer() = 0;
 //private:
@@ -37,18 +39,31 @@ protected:
 };
 
 
+class TimerTask: public Timer
+{
+public:
+    using TimerFunc = std::function<void()>;
+    explicit TimerTask(TimerFunc func);
+    virtual ~TimerTask();
+protected:
+    virtual void on_timer();
+private:
+    TimerFunc func_;
+};
+
+
 class TimerManager
 {
     friend Timer;
     struct TimerNode
     {
-        TimerWPtr    timer_;
-        TimerNode   *next_;
+        TimerWPtr    timer;
+        TimerNode   *next;
     };
     struct TimerQueue
     {
-        TimerNode   *first_;
-        TimerNode   *last_;
+        TimerNode   *first;
+        TimerNode   *last;
     };
     using TimeWheel = std::vector<TimerQueue>;
 public:
@@ -68,5 +83,24 @@ private:
     TimeWheel      *tw_;
 };
 
+
+
+// inline ==========================================================
+
+inline uint64 Timer::get_timer_id() const {
+    return id_;
+}
+
+inline bool Timer::is_loop() const {
+    return loop_;
+}
+
+inline bool Timer::is_cancel() const {
+    return cancel_;
+}
+
+inline void Timer::set_loop(bool loop) {
+    loop_ = loop;
+}
 
 #endif // CORE_TIMER_H

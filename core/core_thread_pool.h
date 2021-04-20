@@ -10,9 +10,9 @@
 struct ThreadPoolTask
 {
     using TaskFunc = std::function<void(void *)>;
-    TaskFunc             func_;
-    void                *data_;
-    ThreadPoolTask      *next_;
+    TaskFunc             func;
+    void                *data;
+    ThreadPoolTask      *next;
 };
 
 class ThreadPool
@@ -21,8 +21,8 @@ class ThreadPool
     friend void *thread_pool_cycle(void *data);
     struct TaskQueue
     {
-        ThreadPoolTask *first_;
-        ThreadPoolTask *last_;
+        ThreadPoolTask *first;
+        ThreadPoolTask *last;
     };
 
 public:
