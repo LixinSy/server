@@ -36,6 +36,7 @@ SOURCES += \
     $$PWD/../core/core_cond.cpp \
     $$PWD/frame/main.cpp \
     ../common/comm_time_util.cpp \
+    ../core/core_singleton.cpp \
     ../core/core_timer.cpp
 
 
@@ -55,6 +56,7 @@ HEADERS += \
     $$PWD/../common/macro.h \
     $$PWD/../common/def.h \
     ../common/comm_time_util.h \
+    ../core/core_singleton.h \
     ../core/core_timer.h \
     frame/test.hpp
 

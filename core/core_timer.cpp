@@ -2,18 +2,26 @@
 #include "comm_time_util.h"
 #include <stdio.h>
 
+
 static const uint32 SI = 10;//ms
 static const uint32 TIME_WHEEL_LEVEL = 4;
-static const uint32 LEVEL_RADIX[TIME_WHEEL_LEVEL] = {4, 3, 3, 3};//{10, 8, 6, 6};
-static const uint32 LEVEL_DIVIS[TIME_WHEEL_LEVEL] = {0, 4, 7, 10};//{10, 8, 6, 6};
-static const uint32 LEVEL_SLOTS[TIME_WHEEL_LEVEL] = {16, 8, 8, 8};//{1024, 256, 64, 64};
-static const uint32 LEVEL_MASKS[TIME_WHEEL_LEVEL] = {15, 7, 7, 7};//{1023, 255, 63, 63};
-static const uint32 LEVEL_TICKS[TIME_WHEEL_LEVEL] = {16, 16*8, 16*8*8, 16*8*8*8};//{1024, 1024*256, 1024*256*64, 1024*256*64*64};
+//static const uint32 LEVEL_RADIX[TIME_WHEEL_LEVEL] = /*{4, 3, 3, 3};//*/{10, 8, 6, 6};
+static const uint32 LEVEL_DIVIS[TIME_WHEEL_LEVEL] = /*{0, 4, 7, 10};//*/{0, 10, 18, 24};
+static const uint32 LEVEL_SLOTS[TIME_WHEEL_LEVEL] = /*{16, 8, 8, 8};//*/{1024, 256, 64, 64};
+static const uint32 LEVEL_MASKS[TIME_WHEEL_LEVEL] = /*{15, 7, 7, 7};//*/{1023, 255, 63, 63};
+static const uint32 LEVEL_TICKS[TIME_WHEEL_LEVEL] = /*{16, 16*8, 16*8*8, 16*8*8*8};//*/{1024, 1024*256, 1024*256*64, 1024*256*64*64};
 
 inline static int64_t get_tick() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return tv.tv_sec * 100ULL + tv.tv_usec / 10000ULL;
+}
+
+void Timer::start_timer(uint32 millisecond, bool loop) {
+    TimerManager::instance()->add_timer(shared_from_this(), millisecond, loop);
+}
+void Timer::stop_timer() {
+    cancel_ = false;
 }
 
 TimerManager::TimerManager() {
@@ -42,7 +50,25 @@ std::string vec_as_string(uint32 *v, uint32 n) {
     os<<"]";
     return os.str();
 }
-bool TimerManager::add_timer(Timer *timer, uint32 millisecond, bool loop) {
+
+inline TimerManager *TimerManager::instance() {
+    static TimerManager obj;
+    return &obj;
+}
+
+void TimerManager::expire_timer() {
+    uint64 now_tk = get_tick();
+    if (now_tk > last_tick_) {
+        for (uint64 tk = last_tick_+1; tk <= now_tk; ++tk) {
+            _tick(tk);
+        }
+        last_tick_ = now_tk;
+    } else if (now_tk < last_tick_){
+        last_tick_ = now_tk;
+    }
+}
+
+bool TimerManager::add_timer(TimerSPtr timer, uint32 millisecond, bool loop) {
     timer->id_ = next_timer_id_++;
     timer->expire_ = (millisecond + TimeUtil::get_millisecond())/SI;
     timer->ex = millisecond + TimeUtil::get_millisecond();
@@ -67,7 +93,7 @@ bool TimerManager::add_timer(Timer *timer, uint32 millisecond, bool loop) {
         slot = LEVEL_MASKS[level];
     }
     printf("------------new timer [%u, %u], tick=%u, cur=%s\n", level, slot, tmp, vec_as_string(slot_, 4).c_str());
-    spin_.lock();
+    spin_.try_lock();
     TimerQueue &queue = tw_[level][slot];
     if (queue.last_){
         queue.last_->next_ = new_node;
@@ -80,36 +106,24 @@ bool TimerManager::add_timer(Timer *timer, uint32 millisecond, bool loop) {
     return true;
 }
 
-void TimerManager::del_timer(Timer *timer) {
+void TimerManager::del_timer(TimerSPtr timer) {
     timer->cancel_ = true;
-}
-
-void TimerManager::expire_timer() {
-    uint64 now_tk = get_tick();
-    if (now_tk > last_tick_) {
-        for (uint64 tk = last_tick_+1; tk <= now_tk; ++tk) {
-            _tick(tk);
-        }
-        last_tick_ = now_tk;
-    } else if (now_tk < last_tick_){
-        last_tick_ = now_tk;
-    }
 }
 
 void TimerManager::_tick(uint64 tk) {
     ++slot_[0];
     slot_[0] = slot_[0] & LEVEL_MASKS[0];
     TimerNode *node = nullptr;
-    uint32 tick, level, slot, pre_level;
+    TimerSPtr timer = nullptr;
+    uint32 tick, level, slot;
     for (uint32 i = 1; i < TIME_WHEEL_LEVEL; ++i) {
-        pre_level = i-1;
-        if (slot_[pre_level]) {
+        if (slot_[i-1]) {
             break;
         }
         ++slot_[i];
         slot_[i] = slot_[i] & LEVEL_MASKS[i];
         //move timer
-        //spin_.lock();
+        spin_.lock();
         TimerQueue &cur_queue = tw_[i][slot_[i]];
         for (node = cur_queue.first_; node; node = cur_queue.first_) {
             cur_queue.first_ = cur_queue.first_->next_;
@@ -117,14 +131,15 @@ void TimerManager::_tick(uint64 tk) {
                 cur_queue.last_ = cur_queue.first_;
             }
             node->next_ = nullptr;
-            if (!node->timer_) {
+            timer = node->timer_.lock();
+            if (!timer) {
                 delete node;
                 continue;
             }
-            if (node->timer_->expire_ < tk) {
+            if (timer->expire_ < tk) {
                 tick = 0;
             } else {
-                tick = node->timer_->expire_ - tk;
+                tick = timer->expire_ - tk;
             }
             uint32 tmp=tick;
             // re-get level, slot
@@ -142,9 +157,9 @@ void TimerManager::_tick(uint64 tk) {
             printf("------------move timer [%u, %u][%u, %u], tick = %u, cur=%s\n", i, slot_[i], level, slot, tmp, vec_as_string(slot_, 4).c_str());
             // put timer
             TimerQueue &target_queue = tw_[level][slot];
-            if (&target_queue == &cur_queue) {
-                printf("circle!!!!!!!!!!!!!!!!!!!!!!!\n");
-            }
+            //if (&target_queue == &cur_queue) {
+            //    printf("circle!!!!!!!!!!!!!!!!!!!!!!!\n");
+            //}
             if (target_queue.last_){
                 target_queue.last_->next_ = node;
                 target_queue.last_ = node;
@@ -153,9 +168,9 @@ void TimerManager::_tick(uint64 tk) {
                 target_queue.first_ = target_queue.last_;
             }
         }
-        //spin_.unlock();
+        spin_.unlock();
     }
-    //spin_.lock();
+    spin_.lock();
     TimerQueue &queue = tw_[0][slot_[0]];
     for (node = queue.first_; node; node = queue.first_) {
         queue.first_ = queue.first_->next_;
@@ -163,20 +178,17 @@ void TimerManager::_tick(uint64 tk) {
             queue.last_ = queue.first_;
         }
         node->next_ = nullptr;
-        if (!node->timer_) {
+        timer = node->timer_.lock();
+        if (!timer || timer->cancel_) {
             delete node;
             continue;
         }
-        if (node->timer_->cancel_) {
-            delete node;
-            continue;
-        }
-        node->timer_->on_timer();
-        if (node->timer_->loop_) {
-            add_timer(node->timer_, node->timer_->interval_, true);
+        timer->on_timer();
+        if (timer->loop_) {
+            add_timer(timer, timer->interval_, true);
         }
         delete node;
     }
-    //spin_.unlock();
+    spin_.unlock();
 }
 

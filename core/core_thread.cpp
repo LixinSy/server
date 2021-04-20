@@ -11,7 +11,7 @@ Runable::Runable()
 {
 }
 Runable::~Runable() {
-    pthread_detach(tid_);
+    //pthread_detach(tid_);
 }
 
 bool Runable::start() {
@@ -23,8 +23,6 @@ bool Runable::start() {
     if (e) {
         return false;
     }
-    //pthread_join(tid_, nullptr);
-    //pthread_detach(tid_);
     return true;
 }
 

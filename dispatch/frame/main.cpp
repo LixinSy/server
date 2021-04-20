@@ -8,13 +8,12 @@
 
 using namespace std;
 
-TimerManager m;
 
 class TT: public Timer
 {
 public:
     TT(){
-        set_loop(true);
+
     }
     virtual void on_timer() {
         uint64 t = TimeUtil::get_millisecond();
@@ -24,22 +23,26 @@ public:
 };
 TT t;
 void foo(void *d){
-    sleep(1);
+    //sleep(1);
     do {
-        m.add_timer(&t, 2000, true);
+        //m.add_timer((TT*)d, 2000, true);
     }while(0);
 }
 
 int main()
 {
+    srand(time(nullptr));
     printf("pid = %lu, __cplusplus = %ld\n", pthread_self(), __cplusplus);
 
-    Thread th(std::bind(foo, nullptr), "");
-    th.start();
-    //m.add_timer(&t, 2000, true);
-
+    Thread th(std::bind(foo, &t), "");
+    //th.start();
+//    {
+    TimerSPtr sp(new TT);
+    sp->start_timer(2000, true);
+//    }
     while (1) {
-        m.expire_timer();
+        TimerManager::instance()->expire_timer();
+        usleep(2500);
     }
 
     printf("%d\n", 0);

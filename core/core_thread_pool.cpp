@@ -32,7 +32,8 @@ void *thread_pool_cycle(void *data){
 }
 
 ThreadPool::ThreadPool(uint32 thread_num, uint32 max_task)
-    : task_queue_({nullptr, nullptr}),
+    : mtx_(false),
+      task_queue_({nullptr, nullptr}),
       waiting_(0),
       max_task_(max_task),
       nthread_(thread_num)
