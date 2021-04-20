@@ -93,7 +93,7 @@ bool TimerManager::add_timer(TimerSPtr timer, uint32 millisecond, bool loop) {
         slot = LEVEL_MASKS[level];
     }
     printf("------------new timer [%u, %u], tick=%u, cur=%s\n", level, slot, tmp, vec_as_string(slot_, 4).c_str());
-    spin_.try_lock();
+    bool succeed = spin_.try_lock();
     TimerQueue &queue = tw_[level][slot];
     if (queue.last_){
         queue.last_->next_ = new_node;
@@ -102,7 +102,9 @@ bool TimerManager::add_timer(TimerSPtr timer, uint32 millisecond, bool loop) {
         queue.last_ = new_node;
         queue.first_ = queue.last_;
     }
-    spin_.unlock();
+    if (succeed) {
+        spin_.unlock();
+    }
     return true;
 }
 

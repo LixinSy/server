@@ -18,7 +18,7 @@ public:
     virtual void on_timer() {
         uint64 t = TimeUtil::get_millisecond();
         printf("timer id = %lu, expire = %lu, now = %lu, rest= %ld\n",
-               get_timer_id(), expire_, t, t-ex);
+               get_timer_id(), ex, t, t-ex);
     }
 };
 TT t;
@@ -42,7 +42,7 @@ int main()
 //    }
     while (1) {
         TimerManager::instance()->expire_timer();
-        usleep(2500);
+        //usleep(2500);
     }
 
     printf("%d\n", 0);
