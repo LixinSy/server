@@ -12,7 +12,7 @@
 class TimerManager;
 class Timer;
 
-using TimerSPtr = std::shared_ptr<Timer>;
+using TimerPtr = std::shared_ptr<Timer>;
 using TimerWPtr = std::weak_ptr<Timer>;
 
 
@@ -30,9 +30,9 @@ public:
     void set_loop(bool loop);
 protected:
     virtual void on_timer() = 0;
-//private:
+private:
     uint64      id_;
-    uint64      expire_,ex;
+    uint64      expire_;
     uint32      interval_;
     bool        loop_:4;
     bool        cancel_:4;
@@ -72,8 +72,8 @@ public:
 protected:
     TimerManager();
     ~TimerManager();
-    bool add_timer(TimerSPtr timer_obj, uint32 millisecond, bool loop);
-    void del_timer(TimerSPtr timer_obj);
+    bool add_timer(TimerPtr timer_obj, uint32 millisecond, bool loop);
+    void del_timer(TimerPtr timer_obj);
 private:
     void _tick(uint64 tk);
     SpinLock        spin_;

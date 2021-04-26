@@ -1,8 +1,8 @@
-#ifndef TIMEUTIL_H
-#define TIMEUTIL_H
-
+#ifndef COMM_TIME_UTIL_H
+#define COMM_TIME_UTIL_H
 
 #include "def.h"
+#include <sys/time.h>
 
 #define ONE_HOUR_S 60*60
 #define ONE_DAY_S 24*60*60
@@ -17,4 +17,4 @@ struct TimeUtil
 
 };
 
-#endif // TIMEUTIL_H
+#endif // COMM_TIME_UTIL_H

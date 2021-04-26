@@ -1,4 +1,5 @@
 #include "core_thread_pool.h"
+#include "comm_inc.h"
 
 void *thread_pool_cycle(void *data){
     sigset_t sigset;

@@ -97,10 +97,9 @@ void TimerManager::expire_timer() {
     }
 }
 
-bool TimerManager::add_timer(TimerSPtr timer, uint32 millisecond, bool loop) {
+bool TimerManager::add_timer(TimerPtr timer, uint32 millisecond, bool loop) {
     timer->id_ = next_timer_id_++;
     timer->expire_ = (millisecond + TimeUtil::get_millisecond())/SI;
-    timer->ex = millisecond + TimeUtil::get_millisecond();
     timer->interval_ = millisecond;
     timer->loop_ = loop;
     TimerNode *new_node = new TimerNode;
@@ -137,7 +136,7 @@ bool TimerManager::add_timer(TimerSPtr timer, uint32 millisecond, bool loop) {
     return true;
 }
 
-void TimerManager::del_timer(TimerSPtr timer) {
+void TimerManager::del_timer(TimerPtr timer) {
     timer->cancel_ = true;
 }
 
@@ -145,7 +144,7 @@ void TimerManager::_tick(uint64 tk) {
     ++slot_[0];
     slot_[0] = slot_[0] & LEVEL_MASKS[0];
     TimerNode *node = nullptr;
-    TimerSPtr timer = nullptr;
+    TimerPtr timer = nullptr;
     uint32 tick, level, slot;
     for (uint32 i = 1; i < TIME_WHEEL_LEVEL; ++i) {
         if (slot_[i-1]) {

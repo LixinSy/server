@@ -1,9 +1,10 @@
-#ifndef TEST_HPP
-#define TEST_HPP
+#ifndef COMM_UTIL_H
+#define COMM_UTIL_H
 
 #include <json/json.h>
 #include <google/protobuf/message.h>
 #include <google/protobuf/unknown_field_set.h>
+#include "def.h"
 
 class Util
 {
@@ -15,4 +16,4 @@ class Util
     static std::string json_as_string(const Json::Value& json);
 };
 
-#endif // TEST_HPP
+#endif // COMM_UTIL_H

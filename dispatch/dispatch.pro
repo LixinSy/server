@@ -36,6 +36,10 @@ SOURCES += \
     $$PWD/../core/core_cond.cpp \
     $$PWD/frame/main.cpp \
     ../common/comm_time_util.cpp \
+    ../common/comm_util.cpp \
+    ../core/core_md5.cpp \
+    ../core/core_murmurhash.cpp \
+    ../core/core_sha.cpp \
     ../core/core_singleton.cpp \
     ../core/core_timer.cpp
 
@@ -55,7 +59,12 @@ HEADERS += \
     $$PWD/../core/core_cond.h \
     $$PWD/../common/macro.h \
     $$PWD/../common/def.h \
+    ../common/comm_inc.h \
     ../common/comm_time_util.h \
+    ../common/comm_util.h \
+    ../core/core_md5.h \
+    ../core/core_murmurhash.h \
+    ../core/core_sha.h \
     ../core/core_singleton.h \
     ../core/core_timer.h \
     frame/test.hpp
