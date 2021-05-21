@@ -6,10 +6,11 @@
 #include <functional>
 #include "def.h"
 #include "core_mutex.h"
-#include "core_singleton.h"
+#include "core_thread.h"
 
 
 class TimerManager;
+class TimerTask;
 class Timer;
 
 using TimerPtr = std::shared_ptr<Timer>;
@@ -52,7 +53,7 @@ private:
 };
 
 
-class TimerManager
+class TimerManager final: public Runable
 {
     friend Timer;
     struct TimerNode
@@ -68,12 +69,13 @@ class TimerManager
     using TimeWheel = std::vector<TimerQueue>;
 public:
     static TimerManager *instance();
-    void expire_timer();
 protected:
     TimerManager();
     ~TimerManager();
     bool add_timer(TimerPtr timer_obj, uint32 millisecond, bool loop);
     void del_timer(TimerPtr timer_obj);
+    void expire_timer();
+    virtual void run() override;
 private:
     void _tick(uint64 tk);
     SpinLock        spin_;

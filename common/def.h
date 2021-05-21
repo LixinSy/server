@@ -51,6 +51,12 @@ typedef int                  HANDLE;
 #endif//__POSIX__
 
 /// define
+#define LX_OK          0
+#define LX_ERROR      -1
+#define LX_AGAIN      -2
+#define LX_BUSY       -3
+#define LX_DONE       -4
+
 #ifndef offsetof
 #ifdef __compiler_offsetof
 #define offsetof(TYPE,MEMBER) __compiler_offsetof(TYPE,MEMBER)
@@ -58,6 +64,7 @@ typedef int                  HANDLE;
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 #endif
 #endif
+
 
 
 #endif // DEF_H

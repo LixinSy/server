@@ -4,6 +4,7 @@
 #include <string>
 #include <functional>
 #include <pthread.h>
+#include "def.h"
 
 class Runable
 {
@@ -16,6 +17,8 @@ public:
 
     virtual void run()=0;
     bool start();
+    bool sleep_for(uint64 msc);
+    bool wait_for(uint64 msc);
 protected:
     pthread_t       tid_;
 };

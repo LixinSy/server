@@ -67,6 +67,7 @@ TimerManager::TimerManager() {
 TimerManager::~TimerManager() {
     delete [] slot_;
     delete [] tw_;
+    spin_.unlock();
 }
 #include <string>
 #include <sstream>
@@ -220,5 +221,9 @@ void TimerManager::_tick(uint64 tk) {
         delete node;
     }
     spin_.unlock();
+}
+
+void TimerManager::run() {
+    expire_timer();
 }
 

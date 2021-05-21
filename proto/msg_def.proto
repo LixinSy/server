@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+//package lx.pb;
+
+message ReqHead
+{
+    uint32 msg_id   = 1;
+    uint32 msg_seq  = 2;
+    uint32 src      = 3;
+}
+
+message RespHead
+{
+    uint32 msg_id   = 1;
+    uint32 msg_seq  = 2;
+    int32 result    = 3;
+}

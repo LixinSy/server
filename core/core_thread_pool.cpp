@@ -13,8 +13,8 @@ void *thread_pool_cycle(void *data){
         return nullptr;
     }
     ThreadPool *tp = (ThreadPool*)data;
-    ThreadPoolTask *task = nullptr;
-    fprintf(stderr, "tid = %lu\n", pthread_self());
+    ThreadPool::ThreadPoolTask *task = nullptr;
+    //fprintf(stderr, "tid = %lu\n", pthread_self());
     while (1) {
         tp->mtx_.lock();
         tp->cond_.wait(tp->mtx_, [tp]{return tp->task_queue_.first;});
@@ -39,26 +39,32 @@ ThreadPool::ThreadPool(uint32 thread_num, uint32 max_task)
       max_task_(max_task),
       nthread_(thread_num)
 {
-    int e;
-    pthread_t tid;
-    pthread_attr_t attr;
-    e = pthread_attr_init(&attr);
-    if (e)  throw std::runtime_error("ThreadPool::ThreadPool pthread_attr_init error");
-    e = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    if (e)  throw std::runtime_error("ThreadPool::ThreadPool pthread_attr_setdetachstate error");
-    for (uint32 i = 0; i < nthread_; ++i) {
-        e = pthread_create(&tid, &attr, thread_pool_cycle, this);
-        if (e)  throw std::runtime_error("ThreadPool::ThreadPool pthread_create error");
-    }
-    e = pthread_attr_destroy(&attr);
-    if (e)  throw std::runtime_error("ThreadPool::ThreadPool pthread_attr_destroy error");
+
 }
 
 ThreadPool::~ThreadPool() {
 
 }
 
-int32 ThreadPool::add_task(FuncT func, void *arg) {
+bool ThreadPool::start() {
+    pthread_t tid;
+    pthread_attr_t attr;
+    if (pthread_attr_init(&attr) < 0) {
+        return false;
+    }
+    if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) < 0){
+        return false;
+    }
+    for (uint32 i = 0; i < nthread_; ++i) {
+        if (pthread_create(&tid, &attr, thread_pool_cycle, this) < 0) {
+            return false;
+        }
+    }
+    pthread_attr_destroy(&attr);
+    return true;
+}
+
+int ThreadPool::add_task(TaskFunc func, void *arg) {
     ThreadPoolTask *new_task = new ThreadPoolTask;
     new_task->func = func;
     new_task->data = arg;
@@ -67,7 +73,7 @@ int32 ThreadPool::add_task(FuncT func, void *arg) {
     if (waiting_ >= max_task_) {
         mtx_.unlock();
         delete new_task;
-        return -1;
+        return LX_BUSY;
     }
     if (task_queue_.last) {
         task_queue_.last->next = new_task;
@@ -79,7 +85,7 @@ int32 ThreadPool::add_task(FuncT func, void *arg) {
     waiting_++;
     cond_.notify_one();
     mtx_.unlock();
-    return 0;
+    return LX_OK;
 }
 
 
