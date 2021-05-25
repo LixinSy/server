@@ -7,6 +7,7 @@ ByteBuffer::ByteBuffer(uint32 size) {
     this->len = 0;
     this->size = size;
     this->data = new byte[size];
+    memset(data, 0, size);
 }
 
 ByteBuffer::~ByteBuffer() {

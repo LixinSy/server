@@ -1,6 +1,7 @@
 #ifndef NET_EVENT_MODULE_H
 #define NET_EVENT_MODULE_H
 
+#include <vector>
 #include "def.h"
 #include "net_event.h"
 #include "core_thread_pool.h"
@@ -22,7 +23,6 @@ public:
     virtual void wait_event(NetEventList *) = 0;
     virtual void update_event(NetEvent *) = 0;
     virtual void process_events() = 0;
-    virtual void remove_event(NetEvent *e) = 0;
     bool init(uint32 thread_num);
     EventSlot *alloc_slot();
     void free_slot(EventSlot *s);

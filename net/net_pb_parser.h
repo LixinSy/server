@@ -1,7 +1,6 @@
 #ifndef NET_PB_PARSER_H
 #define NET_PB_PARSER_H
 
-#include "net_msg_def.h"
 #include "net_parser.h"
 #include "net_pb_message.h"
 
@@ -13,6 +12,7 @@ public:
     virtual int to_read_buffer(const void *src, int len);
     virtual int need_bytes();
     virtual BaseMessage *get_message();
+    virtual void reset_read_buffer();
     virtual int to_write_buffer(const BaseMessage *msg);
     virtual ByteBuffer* get_write_buffer();
     PBMessage * create_message(int cmd);
@@ -24,6 +24,7 @@ private:
 
 class PBParserCreator: public ParserCreator
 {
+public:
     virtual ~PBParserCreator(){}
     Parser * create() override {
         return new PBParser();

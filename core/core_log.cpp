@@ -13,14 +13,13 @@ XLog::XLog() {
     fd_ = nullptr;
     lines_ = 0;
     mtx_ = new Mutex(false);
-    buffer_ = new ByteBuffer(1024);
+    data_.reserve(MAX_BUFF_SIZE*1024);
 }
 XLog::~XLog() {
     if (fd_) {
         fclose(fd_);
     }
     delete mtx_;
-    delete buffer_;
 }
 
 bool XLog::init(const LogParam &param) {
@@ -49,9 +48,10 @@ bool XLog::open_new_file() {
         ::fclose(fd_);
         fd_ = nullptr;
     }
-    std::string file_name = "./log/" + param_.prefix + "_" +uint32_as_str(TimeUtil::get_millisecond()) + ".log";
+    std::string file_name = "./log/" + param_.prefix + "_" +std::to_string(TimeUtil::get_millisecond()) + ".log";
     fd_ = fopen(file_name.c_str(), "w");
     if (!fd_) {
+        fprintf(stderr, "%s fopen err\n", file_name.c_str());
         return false;
     } else {
         return true;
@@ -59,8 +59,9 @@ bool XLog::open_new_file() {
 }
 
 void XLog::xprintf(uint8 level, const char cszFormat[], ...) {
-    if (level > param_.level)
+    if (level > param_.level) {
         return;
+    }
     char buf[MAX_BUFF_SIZE];
     va_list ap;
     va_start(ap, cszFormat);
@@ -69,25 +70,31 @@ void XLog::xprintf(uint8 level, const char cszFormat[], ...) {
     if (len > 0) {
         mtx_->lock();
         ++lines_;
-        buffer_->append(buf, len);
+        data_.append(buf, len);
         mtx_->unlock();
     }
 }
 
 void XLog::run() {
     while (wait_for(2000)) {
+        printf("log run\n");
+        //ttl log ...
         mtx_->lock();
-        if (buffer_->get_length() <= 0) {
+        if (data_.size() <= 0) {
             mtx_->unlock();
             continue;
         }
-        const char *data = (const char *)buffer_->get_data();
+        const char *data = data_.c_str();
         if (param_.option & LogOption::XLOG_OPTION_FILE) {
             if  (!fd_) {
                 open_new_file();
             }
             if (fd_) {
-                ::fprintf(fd_, "%s", data);
+                uint32 put_len = 0;
+                for (int len; put_len < data_.size(); put_len += len) {
+                    len = ::fprintf(fd_, "%s", data+put_len);
+                }
+                fflush(fd_);
                 if (lines_ >= param_.max_line) {
                     open_new_file();
                 }
@@ -99,7 +106,7 @@ void XLog::run() {
         if (param_.option & LogOption::XLOG_OPTION_STDERR) {
             ::fprintf(stderr, "%s", data);
         }
-        buffer_->reset();
+        data_.clear();
         mtx_->unlock();
     }
 }

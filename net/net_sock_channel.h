@@ -1,13 +1,16 @@
 #ifndef NET_SOCK_CHANNEL_H
 #define NET_SOCK_CHANNEL_H
 
+#include <memory>
 #include "core_mutex.h"
 #include "net_event.h"
-#include "net_parser.h"
-#include "net_socket.h"
 
 
+class Socket;
+class Parser;
+class BaseMessage;
 class Session;
+
 using SessionPtr = std::shared_ptr<Session>;
 using SessionWPtr = std::weak_ptr<Session>;
 

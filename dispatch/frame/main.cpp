@@ -7,36 +7,31 @@
 #include "core_thread_pool.h"
 #include "core_timer.h"
 #include "core_mutex.h"
-#include "msg_cd.pb.h"
 #include "net_reactor.h"
 #include "net_tcp_server.h"
 #include "core_log.h"
+#include "net_epoll.h"
+#include "core_byte_buffer.h"
 
 using namespace std;
 
 const char *svr_ip = "10.0.2.15";
 const uint16 svr_port = 5666;
 
-class TT: public Timer
-{
-public:
-    TT(){}
-    virtual void on_timer() {
-        uint64 t = TimeUtil::get_millisecond();
-        printf("timer id = %lu, now = %lu\n", get_timer_id(), t);
-    }
-};
 
 int main()
 {
     srand(time(nullptr));
     printf("pid = %d, __cplusplus = %ld, long=%lu\n", getpid(), __cplusplus, sizeof(void*));
 
+    XLog::instance()->set_option(LogOption::XLOG_OPTION_FILE | LogOption::XLOG_OPTION_STDOUT);
     XLog::instance()->start();
     TimerManager::instance()->start();
 
-    Reactor reactor(0);
-    //reactor.register_acceptor()
+    XOUT("init\n");
+    EventModule *m = new Epoll(512);
+    m->init(4);
+    Reactor reactor(m);
     reactor.loop();
 
     printf("%d\n", 0);

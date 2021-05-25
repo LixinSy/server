@@ -4,15 +4,23 @@ Epoll::Epoll(uint32 max_event_size)
     : EventModule(max_event_size)
 {
     epfd_ = ::epoll_create(max_event_size);
+    events_ = new epoll_event[max_event_size];
+}
+
+Epoll::~Epoll() {
+    close(epfd_);
+    delete events_;
 }
 
 void Epoll::wait_event(NetEventList *event_list) {
     int nready = ::epoll_wait(epfd_, events_, 128, 5);
-    for (int i = 0; i < nready; ++i) {
-        EventSlot *s = (EventSlot*)events_[i].data.ptr;
-        NetEvent *e = s->event;
-        e->active_events_ = events_[i].events;
-        event_list->push_back(e);
+    if (nready > 0) {
+        for (int i = 0; i < nready; ++i) {
+            EventSlot *s = (EventSlot*)events_[i].data.ptr;
+            NetEvent *e = s->event;
+            e->active_events_ = events_[i].events;
+            event_list->push_back(e);
+        }
     }
 }
 
@@ -40,11 +48,10 @@ void Epoll::update_event(NetEvent *net_event) {
 }
 
 void Epoll::process_events() {
-        int err;
+        int nready;
         while (1) {
-            int nready = ::epoll_wait(epfd_, events_, max_event_size_, 5);
-            err = (nready == -1) ? errno : 0;
-            if (err == EINTR) {
+            nready = ::epoll_wait(epfd_, events_, max_event_size_, 5);
+            if (nready <= 0) {
                 continue;
             }
             for (int i = 0; i < nready; ++i) {

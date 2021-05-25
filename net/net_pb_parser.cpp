@@ -1,4 +1,5 @@
 #include "net_pb_parser.h"
+#include "core_byte_buffer.h"
 
 
 PBParser::PBParser() {
@@ -41,8 +42,12 @@ BaseMessage *PBParser::get_message() {
     return message;
 }
 
+void PBParser::reset_read_buffer() {
+    read_buffer_->reset();
+}
+
 int PBParser::to_write_buffer(const BaseMessage *msg) {
-    write_buffer_->append(0, 0);
+    //write_buffer_->append(0, 0);
     return 0;
 }
 

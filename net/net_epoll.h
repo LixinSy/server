@@ -13,10 +13,6 @@ public:
     virtual ~Epoll();
     virtual void wait_event(NetEventList *event_list) override;
     virtual void update_event(NetEvent *net_event) override;
-    virtual void remove_event(NetEvent *net_event) override {
-        net_event->disable_all();
-        update_event(net_event);
-    }
     virtual void process_events() override;
 private:
     void _operate(int opt, NetEvent *net_event);

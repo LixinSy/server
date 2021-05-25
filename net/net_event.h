@@ -1,10 +1,6 @@
 #ifndef NET_EVENT_H
 #define NET_EVENT_H
 
-#include <unordered_map>
-#include <vector>
-#include <memory>
-#include <functional>
 #include <atomic>
 #include "comm_inc.h"
 #include "def.h"
@@ -22,9 +18,9 @@ class NetEvent
 public:
     NetEvent(EventModule *m);
     virtual ~NetEvent() {}
-    virtual int handle_input()  { return LX_OK; }
-    virtual int handle_output() { return LX_OK; }
-    virtual int handle_close()  { return LX_OK; }
+    virtual int handle_input() = 0;
+    virtual int handle_output() = 0;
+    virtual int handle_close() = 0;
     void enable_input()   { regist_events_ |= EPOLLIN; }
     void disable_input()  { regist_events_ &= ~EPOLLIN; }
     void enable_output()  { regist_events_ |= EPOLLOUT; }

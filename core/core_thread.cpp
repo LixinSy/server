@@ -38,7 +38,7 @@ bool Runable::sleep_for(uint64 msc) {
 
 bool Runable::wait_for(uint64 msc) {
     if (pthread_self() == tid_) {
-
+        ::usleep(msc*1000);
     }
     return true;
 }

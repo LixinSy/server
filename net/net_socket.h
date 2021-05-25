@@ -4,7 +4,6 @@
 #include <string>
 #include <unordered_map>
 #include "def.h"
-#include "comm_inc.h"
 #include "net_sock_addr.h"
 
 
@@ -14,10 +13,10 @@ public:
     Socket();
     Socket(int fd);
     ~Socket();
-    int fd() const;
+    int fd() const { return fd_; }
     void close();
     bool closed() const;
-    int set_nonblock();
+    bool set_nonblock();
     bool is_nonblock() const;
     bool set_sock_opt(int opt, void *val, socklen_t vallen);
     bool get_sock_opt(int opt, void *val, socklen_t *vallen);

@@ -1,28 +1,19 @@
 #ifndef NET_SESSION_H
 #define NET_SESSION_H
 
-#include "net_sock_channel.h"
+#include <memory>
 
+
+class SockChannel;
 
 class Session: public std::enable_shared_from_this<Session>
 {
 public:
     Session();
     virtual ~Session();
-    bool open_session(SockChannel* chan) {
-        channel_ = chan;
-        channel_->attach_session(shared_from_this());
-        on_opened_session();
-        return true;
-    }
-    bool close_session() {
-        channel_ = nullptr;
-        on_closed_session();
-        return true;
-    }
-    bool is_alive() {
-        return channel_ != nullptr;
-    }
+    bool open_session(SockChannel* chan);
+    bool close_session();
+    bool is_alive();
 protected:
     virtual void on_opened_session() = 0;
     virtual void on_closed_session() = 0;

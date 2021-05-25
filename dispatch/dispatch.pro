@@ -50,7 +50,6 @@ SOURCES += \
     ../core/core_singleton.cpp \
     ../core/core_timer.cpp \
     ../net/net_base_message.cpp \
-    ../net/net_connection.cpp \
     ../net/net_epoll.cpp \
     ../net/net_event.cpp \
     ../net/net_event_module.cpp \
@@ -63,8 +62,8 @@ SOURCES += \
     ../net/net_sock_addr.cpp \
     ../net/net_sock_channel.cpp \
     ../net/net_socket.cpp \
+    ../net/net_tcp_connector.cpp \
     ../net/net_tcp_server.cpp \
-    ../proto/msg_cd.pb.cc \
     ../proto/msg_def.pb.cc
 
 
@@ -95,7 +94,6 @@ HEADERS += \
     ../core/core_singleton.h \
     ../core/core_timer.h \
     ../net/net_base_message.h \
-    ../net/net_connection.h \
     ../net/net_epoll.h \
     ../net/net_event.h \
     ../net/net_event_module.h \
@@ -109,8 +107,8 @@ HEADERS += \
     ../net/net_sock_addr.h \
     ../net/net_sock_channel.h \
     ../net/net_socket.h \
+    ../net/net_tcp_connector.h \
     ../net/net_tcp_server.h \
-    ../proto/msg_cd.pb.h \
     ../proto/msg_def.pb.h \
     frame/test.hpp
 

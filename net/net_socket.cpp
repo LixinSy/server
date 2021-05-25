@@ -1,5 +1,6 @@
 #include "net_socket.h"
 
+
 Socket::Socket()
     : fd_(0),
       closed_(false),
@@ -20,10 +21,6 @@ Socket::~Socket() {
     }
 }
 
-int Socket::fd() const {
-    return fd_;
-}
-
 void Socket::close() {
     if (!closed_) {
         ::close(fd_);
@@ -35,11 +32,14 @@ bool Socket::closed() const {
     return closed_;
 }
 
-int Socket::set_nonblock() {
+bool Socket::set_nonblock() {
     int old_option = fcntl(fd_, F_GETFL);
     int new_option = old_option | O_NONBLOCK;
-    fcntl(fd_, F_SETFL, new_option);
-    return old_option;
+    if (::fcntl(fd_, F_SETFL, new_option) < 0) {
+        return false;
+    }
+    nonblock_ = true;
+    return true;
 }
 
 bool Socket::is_nonblock() const {
@@ -70,7 +70,8 @@ Socket * Socket::open(int family, int type, int protocol) {
 }
 
 Socket * Socket::accept(int server_fd, SockAddr &sock_addr) {
-    int conn_fd = ::accept(server_fd, (struct sockaddr*)&sock_addr.data_, &sock_addr.sock_len_);
+    uint32 socK_len;
+    int conn_fd = ::accept(server_fd, (struct sockaddr*)&sock_addr.data_, &socK_len);
     if (conn_fd > 0) {
         return new Socket(conn_fd);
     } else {

@@ -74,15 +74,17 @@ private:
     FILE * fd_;
     uint32 lines_;
     Mutex *mtx_;
-    ByteBuffer *buffer_;
+    std::string data_;
 };
 
 
-#define XCRASH(format, ...)	   XLog::instance()->printf(XLOG_CRASH, "[%s, %d] "format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define XERROR(format, ...)    XLog::instance()->printf(XLOG_ERR, "[%s, %d] "format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define XWARNING(format, ...)  XLog::instance()->printf(XLOG_WARNING, "[%s, %d] "format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define XNOTICE(format, ...)   XLog::instance()->printf(XLOG_NOTICE, "[%s, %d] "format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define XINFO(format, ...)     XLog::instance()->printf(XLOG_INFO, "[%s, %d] "format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define XDEBUG(format, ...)    XLog::instance()->printf(XLOG_DEBUG, "[%s, %d] "format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define XCRASH(format, ...)	   XLog::instance()->xprintf(XLOG_CRASH, "[%s, %d] "##format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define XERROR(format, ...)    XLog::instance()->xprintf(XLOG_ERR, "[%s, %d] "##format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define XWARNING(format, ...)  XLog::instance()->xprintf(XLOG_WARNING, "[%s, %d] "##format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define XNOTICE(format, ...)   XLog::instance()->xprintf(XLOG_NOTICE, "[%s, %d] "##format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define XINFO(format, ...)     XLog::instance()->xprintf(XLOG_INFO, "[%s, %d] "##format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define XDEBUG(format, ...)    XLog::instance()->xprintf(XLOG_DEBUG, "[%s, %d] "##format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+
+#define XOUT(format, ...) XLog::instance()->xprintf(XLOG_DEBUG, format, ##__VA_ARGS__)
 
 #endif // CORE_LOG_H

@@ -1,6 +1,12 @@
 #include "net_sock_channel.h"
 #include "net_event_module.h"
+#include "net_pb_parser.h"
+#include "core_byte_buffer.h"
+#include "net_socket.h"
 #include "net_session.h"
+
+
+#define RECV_MSG_BUF_SIZE 1024
 
 
 static void read_thread_func(void *e) {
@@ -17,6 +23,7 @@ SockChannel::SockChannel(EventModule *m, Socket *sock, Parser *parser)
       recving_mutex_(false),
       sending_mutex_(false)
 {
+    fd_ = sock_->fd();
 }
 
 SockChannel::~SockChannel() {
@@ -31,9 +38,11 @@ SockChannel::~SockChannel() {
 }
 
 void SockChannel::read(){
-    byte buff[10240];
+    LockGuard<Mutex> lock(this->recving_mutex_);
+    int recv_len;
+    byte buff[RECV_MSG_BUF_SIZE];
     while (true) {
-        int recv_len = ::recv(sock_->fd(), buff, 10240, 0);
+        recv_len = ::recv(sock_->fd(), buff, RECV_MSG_BUF_SIZE, 0);
         if (recv_len > 0) {
             int put_len = 0;
             for (int len = 0; put_len < recv_len; put_len += len) {
@@ -47,9 +56,10 @@ void SockChannel::read(){
             handle_close();
             return;
         } else {
-            if (errno == EWOULDBLOCK || errno == EAGAIN) {
+            int err = errno;
+            if (err == EWOULDBLOCK || err == EAGAIN) {
                 return;
-            } else if (errno == EINTR) {
+            } else if (err == EINTR) {
                 continue;
             } else {
                 handle_close();
@@ -60,6 +70,7 @@ void SockChannel::read(){
 }
 
 void SockChannel::write(BaseMessage* msg) {
+    LockGuard<Mutex> lock(this->sending_mutex_);
     parser_->to_write_buffer(msg);
     ByteBuffer *buffer = parser_->get_write_buffer();
     const byte *src = buffer->get_data();
@@ -67,17 +78,19 @@ void SockChannel::write(BaseMessage* msg) {
     if (byte_len <= 0) {
         return;
     }
+    int len;
     while (true) {
-        int err = ::send(sock_->fd(), src, byte_len, 0);
-        if (err == byte_len) {
+        len = ::send(sock_->fd(), src, byte_len, 0);
+        if (len == byte_len) {
             buffer->reset();
             return;
         } else {
-            if (errno == EWOULDBLOCK || errno == EAGAIN) {
+            int err = errno;
+            if (err == EWOULDBLOCK || err == EAGAIN) {
                 enable_output();
                 event_module_->update_event(this);
                 return;
-            } else if (errno == EINTR) {
+            } else if (err == EINTR) {
                 continue;
             } else {
                 handle_close();
@@ -97,6 +110,7 @@ int SockChannel::handle_input() {
 }
 
 int SockChannel::handle_output() {
+    LockGuard<Mutex> lock(this->sending_mutex_);
     ByteBuffer *buffer = parser_->get_write_buffer();
     const byte *src = buffer->get_data();
     int byte_len = buffer->get_length();
@@ -105,19 +119,21 @@ int SockChannel::handle_output() {
         event_module_->update_event(this);
         return LX_OK;
     }
+    int len;
     while (true) {
-        int err = ::send(sock_->fd(), src, byte_len, 0);
-        if (err == byte_len) {
+        len = ::send(sock_->fd(), src, byte_len, 0);
+        if (len == byte_len) {
             buffer->reset();
             disable_output();
             event_module_->update_event(this);
             return LX_OK;
         } else {
-            if (errno == EWOULDBLOCK || errno == EAGAIN) {
+            int err = errno;
+            if (err == EWOULDBLOCK || err == EAGAIN) {
                 //enable_output();
                 //event_module_->update_event(this);
                 return LX_OK;
-            } else if (errno == EINTR) {
+            } else if (err == EINTR) {
                 continue;
             } else {
                 handle_close();
@@ -136,7 +152,7 @@ int SockChannel::handle_close() {
     }
     disable_all();
     event_module_->update_event(this);
-    return 0;
+    return LX_OK;
 }
 
 void SockChannel::attach_session(SessionPtr session_ptr) {
