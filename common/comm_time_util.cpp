@@ -1,4 +1,5 @@
 #include "comm_time_util.h"
+#include "core_time.h"
 
 //是否跨天某一小时, resetHour(0-23)
 bool TimeUtil::is_new_day_reset(time_t before, time_t after,  int resetHour) {

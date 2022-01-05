@@ -3,7 +3,6 @@
 
 #include "def.h"
 #include <sys/time.h>
-#include "core_time.h"
 
 struct TimeUtil
 {
