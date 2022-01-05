@@ -142,7 +142,11 @@ void XLog::run() {
             if (fd_) {
                 uint32 put_len = 0;
                 for (int len; put_len < data_.size(); put_len += len) {
-                    len = ::fprintf(fd_, data+put_len);
+                    len = ::fprintf(fd_, "%s", data+put_len);
+                    if (len < 0 ) {
+                        ::fprintf(stderr, "log fprintf err = %d", ferror(fd_));
+                        break;
+                    }
                 }
                 ::fflush(fd_);
                 file_size_ += data_.size();
@@ -163,6 +167,8 @@ void XLog::run() {
 }
 
 void XLog::on_timer() {
+    //TODO  删除过期日志文件
+
     //跨天重新生成文件
     index_ = 0;
     mtx_->lock();
