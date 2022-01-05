@@ -24,7 +24,7 @@ enum LogOption: uint8
     LOG_OPTION_FILE         =   0x01,   // log on to file, default
     LOG_OPTION_STDOUT		=   0x02,   // log on the console if errors in sending
     //LOG_OPTION_STDERR		=   0x04,   // log on the stderr stream
-    //LOG_OPTION_TCP			=   0x08,	// log on the tcp stream
+    //LOG_OPTION_TCP		=   0x08,	// log on the tcp stream
 };
 
 struct LogParam
