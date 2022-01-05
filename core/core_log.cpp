@@ -142,7 +142,7 @@ void XLog::run() {
             if (fd_) {
                 uint32 put_len = 0;
                 for (int len; put_len < data_.size(); put_len += len) {
-                    len = ::fprintf(fd_, "%s", data+put_len);
+                    len = ::fprintf(fd_, data+put_len);
                 }
                 ::fflush(fd_);
                 file_size_ += data_.size();

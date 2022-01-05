@@ -8,23 +8,23 @@
 // 日志输出级别
 enum LogLevel: uint8
 {
-    LOG_NONE		=	0,	// 不打印日志
-    LOG_FATAL		=   1,  // 严重错误,导致程序不能继续运行
-    LOG_ERROR       =   2,  // 程序错误,导致处理失败(如申请内存失败等)
-    LOG_WARN        =	3,	// 程序警告,可能导致错误产生(如传入不合法参数)
-    LOG_NOTICE		=   4,  // 正常但是值得注意的情况
-    LOG_INFO	    =   5,  // 业务相关的信息(不影响程序流程，如显示用户登陆下线信息)
-    LOG_DEBUG	    =   6,  // 调试信息(不影响程序流程，如打印当前内存池中未使用内存块数目等)
-    LOG_TRACE		=	7,	// 打印程序运行轨迹
+    LOG_NONE        = 0, // 不打印日志
+    LOG_FATAL       = 1, // 严重错误,导致程序不能继续运行
+    LOG_ERROR       = 2, // 程序错误,导致处理失败(如申请内存失败等)
+    LOG_WARN        = 3, // 程序警告,可能导致错误产生(如传入不合法参数)
+    LOG_NOTICE      = 4, // 正常但是值得注意的情况
+    LOG_INFO        = 5, // 业务相关的信息(不影响程序流程，如显示用户登陆下线信息)
+    LOG_DEBUG       = 6, // 调试信息(不影响程序流程，如打印当前内存池中未使用内存块数目等)
+    LOG_TRACE       = 7, // 打印程序运行轨迹
 };
 
 // 日志输出位置
 enum LogOption: uint8
 {
-    LOG_OPTION_FILE         =   0x01,   // log on to file, default
-    LOG_OPTION_STDOUT		=   0x02,   // log on the console if errors in sending
-    //LOG_OPTION_STDERR		=   0x04,   // log on the stderr stream
-    //LOG_OPTION_TCP		=   0x08,	// log on the tcp stream
+    LOG_OPTION_FILE         = 0x01,
+    LOG_OPTION_STDOUT       = 0x02,
+    //LOG_OPTION_STDERR		= 0x04,
+    //LOG_OPTION_TCP		= 0x08,
 };
 
 struct LogParam
